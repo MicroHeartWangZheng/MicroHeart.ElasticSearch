@@ -4,8 +4,10 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>MicroHeart</Authors>
-    <Company>杭州捷配</Company>
-    <Product>元器件小组</Product>
+    <Company></Company>
+    <Product></Product>
+    <PackageProjectUrl>https://github.com/MicroHeartWangZheng/MicroHeart.ElasticSearch</PackageProjectUrl>
+    <PackageId>MicroHeart.ElasticSearch.Repository</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
