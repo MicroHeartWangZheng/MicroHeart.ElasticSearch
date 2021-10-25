@@ -1,4 +1,5 @@
-﻿using ElasticSearch.Repository.Extensions;
+﻿using ElasticSearch.Repository.Enum;
+using ElasticSearch.Repository.Extensions;
 using ElasticSearch.Repository.Provider;
 using Nest;
 using System;
@@ -9,12 +10,12 @@ namespace ElasticSearch.Repository
 {
     public partial class BaseRepository<T> : IBaseRepository<T> where T : class
     {
-        private readonly ElasticClient client;
-        public virtual string indexName => typeof(T).Name.ToLower();
+        public readonly IElasticClient client;
+        public virtual string indexName => "";
 
-        public BaseRepository(IEsClientProvider provider)
+        public BaseRepository(IElasticClient client)
         {
-            client = provider.GetClient(indexName);
+            this.client = client;
         }
 
         public bool Insert(T t)
@@ -115,6 +116,24 @@ namespace ElasticSearch.Repository
             return result;
         }
 
+
+        public long SearchCount(ISearchRequest request)
+        {
+            var response = client.Search<T>(request);
+            if (!response.IsValid)
+                return 0L;
+            return response.Total;
+        }
+        public long SearchCount(Func<SearchDescriptor<T>, ISearchRequest> selector)
+        {
+            var response = client.Search(selector);
+            if (!response.IsValid)
+                return 0L;
+
+            return response.Total;
+        }
+
+
         public IEnumerable<IHit<T>> HitsSearch(ISearchRequest request)
         {
             var response = client.Search<T>(request);
@@ -130,6 +149,15 @@ namespace ElasticSearch.Repository
             if (response.IsValid)
                 return response.Hits;
             return null;
+        }
+
+
+        public IEnumerable<string> Analyze(EnumAnalyzer analyzer, string text)
+        {
+            var response = client.Indices.Analyze(a => a.Analyzer(analyzer.ToDescription()).Text(text));
+            if (!response.IsValid)
+                throw null;
+            return response.Tokens.Select(x => x.Token);
         }
     }
 }

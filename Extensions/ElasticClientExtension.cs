@@ -8,11 +8,19 @@ namespace ElasticSearch.Repository.Extensions
 {
     public static class ElasticClientExtension
     {
-        public static bool CreateIndex<T>(this ElasticClient elasticClient, string indexName = "", int numberOfShards = 5, int numberOfReplicas = 1) where T : class
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="elasticClient"></param>
+        /// <param name="indexName"></param>
+        /// <param name="numberOfShards">主分片数量</param>
+        /// <param name="numberOfReplicas">每个主分片的副分片</param>
+        /// <returns></returns>
+        public static bool CreateIndex<T>(this IElasticClient elasticClient, string indexName = "", int numberOfShards = 1, int numberOfReplicas = 1) where T : class
         {
             if (elasticClient.Indices.Exists(indexName).Exists)
                 return true;
-
             var indexState = new IndexState()
             {
                 Settings = new IndexSettings()
@@ -25,7 +33,7 @@ namespace ElasticSearch.Repository.Extensions
         }
 
 
-        public static async Task<bool> CreateIndexAsync<T>(this ElasticClient elasticClient, string indexName = "", int numberOfShards = 5, int numberOfReplicas = 1) where T : class
+        public static async Task<bool> CreateIndexAsync<T>(this IElasticClient elasticClient, string indexName = "", int numberOfShards = 1, int numberOfReplicas = 1) where T : class
         {
             if (elasticClient.Indices.Exists(indexName).Exists)
                 return true;

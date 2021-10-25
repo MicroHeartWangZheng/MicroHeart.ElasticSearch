@@ -6,9 +6,15 @@ using System.Linq;
 
 namespace ElasticSearch.Repository.Provider
 {
+    /// <summary>
+    /// 不用单例模式实现 使用IOC单例注入实现
+    /// </summary>
     public class EsClientProvider : IEsClientProvider
     {
         private ElasticSearchOptions options;
+
+        private ElasticClient elasticClient;
+
         public EsClientProvider(IOptions<ElasticSearchOptions> options)
         {
             if (options == null)
@@ -18,15 +24,19 @@ namespace ElasticSearch.Repository.Provider
 
         public ElasticClient GetClient(string indexName)
         {
-            var uris = options.ConnectionStrings.Select(x => new Uri(x));
-            var connectionPool = new SniffingConnectionPool(uris);
+            if (elasticClient != null)
+                return elasticClient;
+            //var uris = options.ConnectionStrings.Select(x => new Uri(x));
+            //var connectionPool = new SniffingConnectionPool(uris);
+            var connectionString = options.ConnectionStrings.FirstOrDefault();
+            var connectionPool = new SingleNodeConnectionPool(new Uri(connectionString));
             var connectionSetting = new ConnectionSettings(connectionPool);
 
             if (!string.IsNullOrWhiteSpace(indexName))
-            {
-                connectionSetting.DefaultIndex(indexName);
-            }
-            return new ElasticClient(connectionSetting);
+                connectionSetting = connectionSetting.DefaultIndex(indexName);
+
+            elasticClient = new ElasticClient(connectionSetting);
+            return elasticClient;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using ElasticSearch.Repository.Extensions;
+﻿using ElasticSearch.Repository.Enum;
+using ElasticSearch.Repository.Extensions;
 using Nest;
 using System;
 using System.Collections.Generic;
@@ -100,6 +101,10 @@ namespace ElasticSearch.Repository
         {
             var result = new List<T>();
             var response = await client.SearchAsync(selector);
+            if (response.ApiCall.RequestBodyInBytes != null)
+            {
+                var responseJson = System.Text.Encoding.UTF8.GetString(response.ApiCall.RequestBodyInBytes);
+            }
             if (!response.IsValid)
                 return null;
 
@@ -108,6 +113,22 @@ namespace ElasticSearch.Repository
                 result.Add(hit.Source);
             }
             return result;
+        }
+
+        public async Task<long> SearchCountAsync(ISearchRequest request)
+        {
+            var response = await client.SearchAsync<T>(request);
+            if (!response.IsValid)
+                return 0L;
+            return response.Total;
+        }
+        public async Task<long> SearchCountAsync(Func<SearchDescriptor<T>, ISearchRequest> selector)
+        {
+            var response = await client.SearchAsync(selector);
+            if (!response.IsValid)
+                return 0L;
+
+            return response.Total;
         }
 
         public async Task<IEnumerable<IHit<T>>> HitsSearchAsync(ISearchRequest request)
@@ -124,6 +145,23 @@ namespace ElasticSearch.Repository
             if (response.IsValid)
                 return response.Hits;
             return null;
+        }
+
+        public async Task<TermsAggregate<string>> AggsSearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector, string key)
+        {
+            ISearchResponse<T> response = await client.SearchAsync(selector);
+            if (response.IsValid)
+                return response.Aggregations.Terms(key);
+            return null;
+        }
+
+
+        public async Task<IEnumerable<string>> AnalyzeAsync(EnumAnalyzer analyzer, string text)
+        {
+            var response = await client.Indices.AnalyzeAsync(a => a.Analyzer(analyzer.ToDescription()).Text(text));
+            if (!response.IsValid)
+                throw null;
+            return response.Tokens.Select(x => x.Token);
         }
     }
 }

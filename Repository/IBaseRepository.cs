@@ -1,4 +1,5 @@
-﻿using Nest;
+﻿using ElasticSearch.Repository.Enum;
+using Nest;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -29,15 +30,28 @@ namespace ElasticSearch.Repository
         Task<IEnumerable<T>> GetManyAsync(IEnumerable<long> ids);
 
         IEnumerable<T> Search(ISearchRequest request);
+
         Task<IEnumerable<T>> SearchAsync(ISearchRequest request);
+
+        long SearchCount(ISearchRequest request);
+        Task<long> SearchCountAsync(ISearchRequest request);
 
         IEnumerable<T> Search(Func<SearchDescriptor<T>, ISearchRequest> selector);
         Task<IEnumerable<T>> SearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector);
+
+        long SearchCount(Func<SearchDescriptor<T>, ISearchRequest> selector);
+        Task<long> SearchCountAsync(Func<SearchDescriptor<T>, ISearchRequest> selector);
 
         IEnumerable<IHit<T>> HitsSearch(ISearchRequest request);
         Task<IEnumerable<IHit<T>>> HitsSearchAsync(ISearchRequest request);
 
         IEnumerable<IHit<T>> HitsSearch(Func<SearchDescriptor<T>, ISearchRequest> selector);
         Task<IEnumerable<IHit<T>>> HitsSearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector);
+
+        Task<TermsAggregate<string>> AggsSearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector, string key);
+
+        IEnumerable<string> Analyze(EnumAnalyzer analyzer, string text);
+
+        Task<IEnumerable<string>> AnalyzeAsync(EnumAnalyzer analyzer, string text);
     }
 }
