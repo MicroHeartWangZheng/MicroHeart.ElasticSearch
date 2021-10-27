@@ -83,21 +83,21 @@ namespace ElasticSearch.Repository
             return result;
         }
 
-        public async Task<IEnumerable<T>> SearchAsync(ISearchRequest request)
+        public async Task<(IEnumerable<T>, long)> SearchAsync(ISearchRequest request)
         {
             var result = new List<T>();
 
             var response = await client.SearchAsync<T>(request);
             if (!response.IsValid)
-                return null;
+                return (null, 0);
 
             foreach (var hit in response.Hits)
             {
                 result.Add(hit.Source);
             }
-            return result;
+            return (result, response.Total);
         }
-        public async Task<IEnumerable<T>> SearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector)
+        public async Task<(IEnumerable<T>,long )> SearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector)
         {
             var result = new List<T>();
             var response = await client.SearchAsync(selector);
@@ -106,31 +106,15 @@ namespace ElasticSearch.Repository
                 var responseJson = System.Text.Encoding.UTF8.GetString(response.ApiCall.RequestBodyInBytes);
             }
             if (!response.IsValid)
-                return null;
+                return (null,0);
 
             foreach (var hit in response.Hits)
             {
                 result.Add(hit.Source);
             }
-            return result;
+            return (result,response.Total);
         }
-
-        public async Task<long> SearchCountAsync(ISearchRequest request)
-        {
-            var response = await client.SearchAsync<T>(request);
-            if (!response.IsValid)
-                return 0L;
-            return response.Total;
-        }
-        public async Task<long> SearchCountAsync(Func<SearchDescriptor<T>, ISearchRequest> selector)
-        {
-            var response = await client.SearchAsync(selector);
-            if (!response.IsValid)
-                return 0L;
-
-            return response.Total;
-        }
-
+        
         public async Task<IEnumerable<IHit<T>>> HitsSearchAsync(ISearchRequest request)
         {
             var response = await client.SearchAsync<T>(request);

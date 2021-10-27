@@ -29,18 +29,11 @@ namespace ElasticSearch.Repository
         IEnumerable<T> GetMany(IEnumerable<long> ids);
         Task<IEnumerable<T>> GetManyAsync(IEnumerable<long> ids);
 
-        IEnumerable<T> Search(ISearchRequest request);
+        (IEnumerable<T>, long) Search(ISearchRequest request);
+        Task<(IEnumerable<T>, long)> SearchAsync(ISearchRequest request);
 
-        Task<IEnumerable<T>> SearchAsync(ISearchRequest request);
-
-        long SearchCount(ISearchRequest request);
-        Task<long> SearchCountAsync(ISearchRequest request);
-
-        IEnumerable<T> Search(Func<SearchDescriptor<T>, ISearchRequest> selector);
-        Task<IEnumerable<T>> SearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector);
-
-        long SearchCount(Func<SearchDescriptor<T>, ISearchRequest> selector);
-        Task<long> SearchCountAsync(Func<SearchDescriptor<T>, ISearchRequest> selector);
+        (IEnumerable<T>, long) Search(Func<SearchDescriptor<T>, ISearchRequest> selector);
+        Task<(IEnumerable<T>, long)> SearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector);
 
         IEnumerable<IHit<T>> HitsSearch(ISearchRequest request);
         Task<IEnumerable<IHit<T>>> HitsSearchAsync(ISearchRequest request);

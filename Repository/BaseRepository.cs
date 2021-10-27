@@ -87,50 +87,33 @@ namespace ElasticSearch.Repository
             return result;
         }
 
-        public IEnumerable<T> Search(ISearchRequest request)
+        public (IEnumerable<T>, long) Search(ISearchRequest request)
         {
             var result = new List<T>();
 
             var response = client.Search<T>(request);
             if (!response.IsValid)
-                return null;
+                return (null, 0);
 
             foreach (var hit in response.Hits)
             {
                 result.Add(hit.Source);
             }
-            return result;
+            return (result, response.Total);
         }
 
-        public IEnumerable<T> Search(Func<SearchDescriptor<T>, ISearchRequest> selector)
+        public (IEnumerable<T>, long) Search(Func<SearchDescriptor<T>, ISearchRequest> selector)
         {
             var result = new List<T>();
             var response = client.Search(selector);
             if (!response.IsValid)
-                return null;
+                return (null, 0);
 
             foreach (var hit in response.Hits)
             {
                 result.Add(hit.Source);
             }
-            return result;
-        }
-
-
-        public long SearchCount(ISearchRequest request)
-        {
-            var response = client.Search<T>(request);
-            if (!response.IsValid)
-                return 0L;
-            return response.Total;
-        }
-        public long SearchCount(Func<SearchDescriptor<T>, ISearchRequest> selector)
-        {
-            var response = client.Search(selector);
-            if (!response.IsValid)
-                return 0L;
-
-            return response.Total;
+            return (result, response.Total);
         }
 
 
