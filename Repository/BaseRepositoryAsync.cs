@@ -20,11 +20,11 @@ namespace ElasticSearch.Repository
                     throw new Exception("创建Index失败");
             }
 
-            var response = await client.IndexDocumentAsync(t);
+            var response = await client.IndexAsync(t, s => s.Index(indexName));
             return response.IsValid;
         }
 
-        public async Task<bool> InsertManyAsync(IEnumerable<T> entitys)
+        public async Task<bool> InsertManyAsync(IEnumerable<T> entities)
         {
             var result = await client.Indices.ExistsAsync(indexName);
             if (!result.Exists)
@@ -34,13 +34,31 @@ namespace ElasticSearch.Repository
                     throw new Exception("创建Index失败");
             }
 
-            var response = await client.IndexManyAsync(entitys);
+            var response = await client.IndexManyAsync(entities, indexName);
             return response.IsValid;
+        }
+
+
+        public async Task<bool> BulkAsync(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null)
+        {
+            if (!client.Indices.Exists(indexName).Exists)
+            {
+                var result = client.CreateIndex<T>(indexName);
+                if (!result)
+                    throw new Exception("创建Index失败");
+            }
+            var resp = await client.BulkAsync(b => b.Index(indexName).IndexMany(entities, bulkIndexSelector));
+            return resp.IsValid;
         }
 
         public async Task<bool> DeleteAsync(Id id)
         {
             var response = await client.DeleteAsync<T>(id);
+            return response.IsValid;
+        }
+        public async Task<bool> DeleteByQueryAsync(Func<DeleteByQueryDescriptor<T>, IDeleteByQueryRequest> selector)
+        {
+            var response = await client.DeleteByQueryAsync(selector);
             return response.IsValid;
         }
 
@@ -83,11 +101,14 @@ namespace ElasticSearch.Repository
             return result;
         }
 
-        public async Task<(IEnumerable<T>, long)> SearchAsync(ISearchRequest request)
+        public async Task<(IEnumerable<T>, long)> SearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector)
         {
             var result = new List<T>();
-
-            var response = await client.SearchAsync<T>(request);
+            var response = await client.SearchAsync(selector);
+            if (response.ApiCall.RequestBodyInBytes != null)
+            {
+                var responseJson = System.Text.Encoding.UTF8.GetString(response.ApiCall.RequestBodyInBytes);
+            }
             if (!response.IsValid)
                 return (null, 0);
 
@@ -97,32 +118,7 @@ namespace ElasticSearch.Repository
             }
             return (result, response.Total);
         }
-        public async Task<(IEnumerable<T>,long )> SearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector)
-        {
-            var result = new List<T>();
-            var response = await client.SearchAsync(selector);
-            if (response.ApiCall.RequestBodyInBytes != null)
-            {
-                var responseJson = System.Text.Encoding.UTF8.GetString(response.ApiCall.RequestBodyInBytes);
-            }
-            if (!response.IsValid)
-                return (null,0);
 
-            foreach (var hit in response.Hits)
-            {
-                result.Add(hit.Source);
-            }
-            return (result,response.Total);
-        }
-        
-        public async Task<IEnumerable<IHit<T>>> HitsSearchAsync(ISearchRequest request)
-        {
-            var response = await client.SearchAsync<T>(request);
-            if (response.IsValid)
-                return response.Hits;
-            else
-                throw null;
-        }
         public async Task<IEnumerable<IHit<T>>> HitsSearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector)
         {
             ISearchResponse<T> response = await client.SearchAsync(selector);
@@ -138,7 +134,6 @@ namespace ElasticSearch.Repository
                 return response.Aggregations.Terms(key);
             return null;
         }
-
 
         public async Task<IEnumerable<string>> AnalyzeAsync(EnumAnalyzer analyzer, string text)
         {

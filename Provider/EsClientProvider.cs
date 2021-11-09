@@ -26,8 +26,6 @@ namespace ElasticSearch.Repository.Provider
         {
             if (elasticClient != null)
                 return elasticClient;
-            //var uris = options.ConnectionStrings.Select(x => new Uri(x));
-            //var connectionPool = new SniffingConnectionPool(uris);
             var connectionString = options.ConnectionStrings.FirstOrDefault();
             var connectionPool = new SingleNodeConnectionPool(new Uri(connectionString));
             var connectionSetting = new ConnectionSettings(connectionPool);
@@ -35,8 +33,7 @@ namespace ElasticSearch.Repository.Provider
             if (!string.IsNullOrWhiteSpace(indexName))
                 connectionSetting = connectionSetting.DefaultIndex(indexName);
 
-            elasticClient = new ElasticClient(connectionSetting);
-            return elasticClient;
+            return new ElasticClient(connectionSetting);
         }
     }
 }

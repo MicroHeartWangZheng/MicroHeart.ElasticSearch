@@ -11,7 +11,7 @@ namespace ElasticSearch.Repository.Extensions
 {
     public static class ServiceCollectionExtension
     {
-        public static IServiceCollection AddElasticSearch(this IServiceCollection services, string indexName)
+        public static IServiceCollection AddElasticSearch(this IServiceCollection services, string defaultIndexName)
         {
             if (services == null)
                 throw new ArgumentNullException(nameof(services));
@@ -31,8 +31,8 @@ namespace ElasticSearch.Repository.Extensions
                 var connectionPool = new SingleNodeConnectionPool(new Uri(connectionString));
                 var connectionSetting = new ConnectionSettings(connectionPool).DisableDirectStreaming();
 
-                if (!string.IsNullOrWhiteSpace(indexName))
-                    connectionSetting = connectionSetting.DefaultIndex(indexName);
+                if (!string.IsNullOrWhiteSpace(defaultIndexName))
+                    connectionSetting = connectionSetting.DefaultIndex(defaultIndexName);
                 return new ElasticClient(connectionSetting);
             });
 
