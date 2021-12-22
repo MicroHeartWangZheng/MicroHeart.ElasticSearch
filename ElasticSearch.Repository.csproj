@@ -4,10 +4,11 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>MicroHeart</Authors>
-    <Company></Company>
+    <Company>JiePei</Company>
     <Product></Product>
     <PackageProjectUrl>https://github.com/MicroHeartWangZheng/MicroHeart.ElasticSearch</PackageProjectUrl>
     <PackageId>MicroHeart.ElasticSearch.Repository</PackageId>
+	<Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

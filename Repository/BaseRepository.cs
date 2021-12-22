@@ -120,10 +120,8 @@ namespace ElasticSearch.Repository
         {
             if (client.Indices.Exists(indexName).Exists)
                 return;
-
-            var result = client.CreateIndex<T>(indexName);
-            //if (!client.CreateIndex<T>(indexName))
-            //    throw new Exception("创建Index失败");
+            if (!client.CreateIndex<T>(indexName))
+                throw new Exception("创建Index失败");
         }
     }
 }
