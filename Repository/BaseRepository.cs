@@ -1,6 +1,5 @@
 ﻿using ElasticSearch.Repository.Enum;
 using ElasticSearch.Repository.Extensions;
-using ElasticSearch.Repository.Provider;
 using Nest;
 using System;
 using System.Collections.Generic;
@@ -12,46 +11,29 @@ namespace ElasticSearch.Repository
     {
         public readonly IElasticClient client;
 
-        public virtual string indexName => "";
+        public virtual string indexName { get; set; }
 
         public BaseRepository(IElasticClient client)
         {
             this.client = client;
+            indexName = typeof(T).Name.ToLower();
         }
 
         public bool Insert(T t)
         {
-            if (!client.Indices.Exists(indexName).Exists)
-            {
-                var result = client.CreateIndex<T>(indexName);
-                if (!result)
-                    throw new Exception("创建Index失败");
-            }
-
+            ExistOrCreate();
             return client.Index(t, s => s.Index(indexName)).IsValid;
         }
 
         public bool InsertMany(IEnumerable<T> entities)
         {
-            if (!client.Indices.Exists(indexName).Exists)
-            {
-                var result = client.CreateIndex<T>(indexName);
-                if (!result)
-                    throw new Exception("创建Index失败");
-            }
-
+            ExistOrCreate();
             return client.IndexMany(entities, indexName).IsValid;
         }
 
         public bool Bulk(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null)
         {
-            if (!client.Indices.Exists(indexName).Exists)
-            {
-                var result = client.CreateIndex<T>(indexName);
-                if (!result)
-                    throw new Exception("创建Index失败");
-            }
-
+            ExistOrCreate();
             return client.Bulk(b => b.Index(indexName).IndexMany(entities, bulkIndexSelector)).IsValid;
         }
 
@@ -132,6 +114,16 @@ namespace ElasticSearch.Repository
             if (!response.IsValid)
                 throw null;
             return response.Tokens.Select(x => x.Token);
+        }
+
+        private void ExistOrCreate()
+        {
+            if (client.Indices.Exists(indexName).Exists)
+                return;
+
+            var result = client.CreateIndex<T>(indexName);
+            //if (!client.CreateIndex<T>(indexName))
+            //    throw new Exception("创建Index失败");
         }
     }
 }

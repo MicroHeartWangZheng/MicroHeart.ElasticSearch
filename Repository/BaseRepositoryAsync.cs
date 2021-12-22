@@ -12,27 +12,14 @@ namespace ElasticSearch.Repository
     {
         public async Task<bool> InsertAsync(T t)
         {
-            var result = await client.Indices.ExistsAsync(indexName);
-            if (!result.Exists)
-            {
-                var createResult = await client.CreateIndexAsync<T>(indexName);
-                if (!createResult)
-                    throw new Exception("创建Index失败");
-            }
-
+            await ExistOrCreateAsync();
             var response = await client.IndexAsync(t, s => s.Index(indexName));
             return response.IsValid;
         }
 
         public async Task<bool> InsertManyAsync(IEnumerable<T> entities)
         {
-            var result = await client.Indices.ExistsAsync(indexName);
-            if (!result.Exists)
-            {
-                var createResult = await client.CreateIndexAsync<T>(indexName);
-                if (!createResult)
-                    throw new Exception("创建Index失败");
-            }
+            await ExistOrCreateAsync();
 
             var response = await client.IndexManyAsync(entities, indexName);
             return response.IsValid;
@@ -41,12 +28,8 @@ namespace ElasticSearch.Repository
 
         public async Task<bool> BulkAsync(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null)
         {
-            if (!client.Indices.Exists(indexName).Exists)
-            {
-                var result = client.CreateIndex<T>(indexName);
-                if (!result)
-                    throw new Exception("创建Index失败");
-            }
+            await ExistOrCreateAsync();
+
             var resp = await client.BulkAsync(b => b.Index(indexName).IndexMany(entities, bulkIndexSelector));
             return resp.IsValid;
         }
@@ -141,6 +124,17 @@ namespace ElasticSearch.Repository
             if (!response.IsValid)
                 throw null;
             return response.Tokens.Select(x => x.Token);
+        }
+
+
+        private async Task ExistOrCreateAsync()
+        {
+            var result = await client.Indices.ExistsAsync(indexName);
+            if (result.Exists)
+                return;
+            var createResult = await client.CreateIndexAsync<T>(indexName);
+            if (!createResult)
+                throw new Exception("创建Index失败");
         }
     }
 }

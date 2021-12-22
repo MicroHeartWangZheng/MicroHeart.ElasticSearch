@@ -11,7 +11,7 @@ namespace ElasticSearch.Repository.Extensions
 {
     public static class ServiceCollectionExtension
     {
-        public static IServiceCollection AddElasticSearch(this IServiceCollection services, string defaultIndexName)
+        public static IServiceCollection AddElasticSearch(this IServiceCollection services, string defaultIndexName = "")
         {
             if (services == null)
                 throw new ArgumentNullException(nameof(services));
@@ -19,7 +19,6 @@ namespace ElasticSearch.Repository.Extensions
             var serviceProvider = services.BuildServiceProvider();
             var configuration = serviceProvider.GetService<IConfiguration>();
 
-            //services.AddSingleton<IEsClientProvider, EsClientProvider>();
             services.Configure<ElasticSearchOptions>(configuration.GetSection("ElasticSearchOptions"));
 
             services.AddSingleton<IElasticClient>(provider =>
