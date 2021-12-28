@@ -20,11 +20,14 @@ namespace ElasticSearch.Repository
         bool Delete(Id id);
         Task<bool> DeleteAsync(Id id);
 
-        bool DeleteByQuery(Func<DeleteByQueryDescriptor<T>, IDeleteByQueryRequest> selector);
-        Task<bool> DeleteByQueryAsync(Func<DeleteByQueryDescriptor<T>, IDeleteByQueryRequest> selector);
+        bool DeleteByQuery(DeleteByQueryDescriptor<T> descriptor);
+        Task<bool> DeleteByQueryAsync(DeleteByQueryDescriptor<T> descriptor);
 
         bool Update(Id id, T t);
         Task<bool> UpdateAsync(Id id, T t);
+
+        bool UpdateByQuery(UpdateByQueryDescriptor<T> descriptor);
+        Task<bool> UpdateByQueryAsync(UpdateByQueryDescriptor<T> descriptor);
 
         T Get(Id id);
         Task<T> GetAsync(Id id);
@@ -35,14 +38,13 @@ namespace ElasticSearch.Repository
         IEnumerable<T> GetMany(IEnumerable<long> ids);
         Task<IEnumerable<T>> GetManyAsync(IEnumerable<long> ids);
 
-        (IEnumerable<T>, long) Search(Func<SearchDescriptor<T>, ISearchRequest> selector);
-        Task<(IEnumerable<T>, long)> SearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector);
+        (IEnumerable<T>, long) Search(SearchDescriptor<T> descriptor);
+        Task<(IEnumerable<T>, long)> SearchAsync(SearchDescriptor<T> descriptor);
 
-        IEnumerable<IHit<T>> HitsSearch(Func<SearchDescriptor<T>, ISearchRequest> selector);
-        Task<IEnumerable<IHit<T>>> HitsSearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector);
+        IEnumerable<IHit<T>> HitsSearch(SearchDescriptor<T> descriptor);
+        Task<IEnumerable<IHit<T>>> HitsSearchAsync(SearchDescriptor<T> descriptor);
 
-        Task<TermsAggregate<string>> AggsSearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector, string key);
-
+        Task<TermsAggregate<string>> AggsSearchAsync(SearchDescriptor<T> descriptor, string key);
 
         IEnumerable<string> Analyze(EnumAnalyzer analyzer, string text);
         Task<IEnumerable<string>> AnalyzeAsync(EnumAnalyzer analyzer, string text);

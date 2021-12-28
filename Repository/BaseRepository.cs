@@ -1,5 +1,6 @@
 ﻿using ElasticSearch.Repository.Enum;
 using ElasticSearch.Repository.Extensions;
+using Microsoft.Extensions.Options;
 using Nest;
 using System;
 using System.Collections.Generic;
@@ -9,52 +10,68 @@ namespace ElasticSearch.Repository
 {
     public partial class BaseRepository<T> : IBaseRepository<T> where T : class
     {
-        public readonly IElasticClient client;
+        private readonly IElasticClient client;
+        private readonly ElasticSearchOptions options;
 
-        public virtual string indexName { get; set; }
+        /// <summary>
+        /// 可以通过重载 重写索引名称
+        /// </summary>
+        public virtual string IndexName { get; set; }
 
-        public BaseRepository(IElasticClient client)
+        public BaseRepository(IElasticClient client, IOptions<ElasticSearchOptions> options)
         {
             this.client = client;
-            indexName = typeof(T).Name.ToLower();
+            if (options == null)
+                throw new ArgumentNullException(nameof(options));
+            this.options = options.Value;
+            IndexName = typeof(T).Name.ToLower();
         }
 
         public bool Insert(T t)
         {
             ExistOrCreate();
-            return client.Index(t, s => s.Index(indexName)).IsValid;
+            return client.Index(t, s => s.Index(IndexName)).IsValid;
         }
 
         public bool InsertMany(IEnumerable<T> entities)
         {
             ExistOrCreate();
-            return client.IndexMany(entities, indexName).IsValid;
+            return client.IndexMany(entities, IndexName).IsValid;
         }
 
         public bool Bulk(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null)
         {
             ExistOrCreate();
-            return client.Bulk(b => b.Index(indexName).IndexMany(entities, bulkIndexSelector)).IsValid;
+            return client.Bulk(b => b.Index(IndexName).IndexMany(entities, bulkIndexSelector)).IsValid;
         }
 
         public bool Delete(Id id)
         {
-            return client.Delete<T>(id, d => d.Index(indexName)).IsValid;
+            return client.Delete<T>(id, d => d.Index(IndexName)).IsValid;
         }
 
-        public bool DeleteByQuery(Func<DeleteByQueryDescriptor<T>, IDeleteByQueryRequest> selector)
+        public bool DeleteByQuery(DeleteByQueryDescriptor<T> descriptor)
         {
+            descriptor = descriptor.Index(IndexName);
+            Func<DeleteByQueryDescriptor<T>, IDeleteByQueryRequest> selector = x => descriptor;
             return client.DeleteByQuery(selector).IsValid;
         }
 
         public bool Update(Id id, T t)
         {
-            return client.Update<T>(id, p => p.Index(indexName).Doc(t)).IsValid;
+            return client.Update<T>(id, p => p.Index(IndexName).Doc(t)).IsValid;
+        }
+
+        public bool UpdateByQuery(UpdateByQueryDescriptor<T> descriptor)
+        {
+            descriptor = descriptor.Index(IndexName);
+            Func<UpdateByQueryDescriptor<T>, IUpdateByQueryRequest> selector = x => descriptor;
+            return client.UpdateByQuery<T>(selector).IsValid;
         }
 
         public T Get(Id id)
         {
-            var response = client.Get<T>(id, g => g.Index(indexName));
+            var response = client.Get<T>(id, g => g.Index(IndexName));
             if (response.IsValid && response.Found)
                 return response.Source;
             return null;
@@ -63,45 +80,37 @@ namespace ElasticSearch.Repository
         public IEnumerable<T> GetMany(IEnumerable<string> ids)
         {
             var result = new List<T>();
-            var response = client.GetMany<T>(ids, indexName);
-            if ((response?.Count() ?? 0) == 0)
-                return null;
-            foreach (var item in response)
-            {
-                result.Add(item.Source);
-            }
+            var response = client.GetMany<T>(ids, IndexName);
+            if ((response?.Count() ?? 0) != 0)
+                result.AddRange(response.Select(x => x.Source));
             return result;
         }
 
         public IEnumerable<T> GetMany(IEnumerable<long> ids)
         {
             var result = new List<T>();
-            var response = client.GetMany<T>(ids, indexName);
-            if ((response?.Count() ?? 0) == 0)
-                return null;
-            foreach (var item in response)
-            {
-                result.Add(item.Source);
-            }
+            var response = client.GetMany<T>(ids, IndexName);
+            if ((response?.Count() ?? 0) != 0)
+                result.AddRange(response.Select(x => x.Source));
             return result;
         }
 
-        public (IEnumerable<T>, long) Search(Func<SearchDescriptor<T>, ISearchRequest> selector)
+        public (IEnumerable<T>, long) Search(SearchDescriptor<T>  descriptor)
         {
             var result = new List<T>();
+            descriptor = descriptor.Index(IndexName);
+            Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
             var response = client.Search(selector);
             if (!response.IsValid)
                 return (null, 0);
-
-            foreach (var hit in response.Hits)
-            {
-                result.Add(hit.Source);
-            }
+            result.AddRange(response.Hits.Select(x => x.Source));
             return (result, response.Total);
         }
 
-        public IEnumerable<IHit<T>> HitsSearch(Func<SearchDescriptor<T>, ISearchRequest> selector)
+        public IEnumerable<IHit<T>> HitsSearch(SearchDescriptor<T> descriptor)
         {
+            descriptor = descriptor.Index(IndexName);
+            Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
             var response = client.Search(selector);
             if (response.IsValid)
                 return response.Hits;
@@ -118,9 +127,9 @@ namespace ElasticSearch.Repository
 
         private void ExistOrCreate()
         {
-            if (client.Indices.Exists(indexName).Exists)
+            if (client.Indices.Exists(IndexName).Exists)
                 return;
-            if (!client.CreateIndex<T>(indexName))
+            if (!client.CreateIndex<T>(IndexName, options.NumberOfShards, options.NumberOfReplicas))
                 throw new Exception("创建Index失败");
         }
     }

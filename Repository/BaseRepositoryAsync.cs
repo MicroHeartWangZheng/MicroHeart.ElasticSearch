@@ -13,15 +13,14 @@ namespace ElasticSearch.Repository
         public async Task<bool> InsertAsync(T t)
         {
             await ExistOrCreateAsync();
-            var response = await client.IndexAsync(t, s => s.Index(indexName));
+            var response = await client.IndexAsync(t, s => s.Index(IndexName));
             return response.IsValid;
         }
 
         public async Task<bool> InsertManyAsync(IEnumerable<T> entities)
         {
             await ExistOrCreateAsync();
-
-            var response = await client.IndexManyAsync(entities, indexName);
+            var response = await client.IndexManyAsync(entities, IndexName);
             return response.IsValid;
         }
 
@@ -29,31 +28,40 @@ namespace ElasticSearch.Repository
         public async Task<bool> BulkAsync(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null)
         {
             await ExistOrCreateAsync();
-
-            var resp = await client.BulkAsync(b => b.Index(indexName).IndexMany(entities, bulkIndexSelector));
+            var resp = await client.BulkAsync(b => b.Index(IndexName).IndexMany(entities, bulkIndexSelector));
             return resp.IsValid;
         }
 
         public async Task<bool> DeleteAsync(Id id)
         {
-            var response = await client.DeleteAsync<T>(id);
+            var response = await client.DeleteAsync<T>(id, x => x.Index(IndexName));
             return response.IsValid;
         }
-        public async Task<bool> DeleteByQueryAsync(Func<DeleteByQueryDescriptor<T>, IDeleteByQueryRequest> selector)
+        public async Task<bool> DeleteByQueryAsync(DeleteByQueryDescriptor<T> descriptor)
         {
+            descriptor = descriptor.Index(IndexName);
+            Func<DeleteByQueryDescriptor<T>, IDeleteByQueryRequest> selector = x => descriptor;
             var response = await client.DeleteByQueryAsync(selector);
             return response.IsValid;
         }
 
         public async Task<bool> UpdateAsync(Id id, T t)
         {
-            var response = await client.UpdateAsync<T>(id, p => p.Doc(t));
+            var response = await client.UpdateAsync<T>(id, p => p.Index(IndexName).Doc(t));
+            return response.IsValid;
+        }
+
+        public async Task<bool> UpdateByQueryAsync(UpdateByQueryDescriptor<T> descriptor)
+        {
+            descriptor = descriptor.Index(IndexName);
+            Func<UpdateByQueryDescriptor<T>, IUpdateByQueryRequest> selector = x => descriptor;
+            var response = await client.UpdateByQueryAsync<T>(selector);
             return response.IsValid;
         }
 
         public async Task<T> GetAsync(Id id)
         {
-            var response = await client.GetAsync<T>(id);
+            var response = await client.GetAsync<T>(id, x => x.Index(IndexName));
             if (response.IsValid)
                 return response.Source;
             return null;
@@ -62,31 +70,26 @@ namespace ElasticSearch.Repository
         public async Task<IEnumerable<T>> GetManyAsync(IEnumerable<string> ids)
         {
             var result = new List<T>();
-            var response = await client.GetManyAsync<T>(ids);
-            if ((response?.Count() ?? 0) == 0)
-                return null;
-            foreach (var item in response)
-            {
-                result.Add(item.Source);
-            }
+            var response = await client.GetManyAsync<T>(ids, IndexName);
+            if ((response?.Count() ?? 0) != 0)
+                result.AddRange(response.Select(x => x.Source));
             return result;
         }
         public async Task<IEnumerable<T>> GetManyAsync(IEnumerable<long> ids)
         {
             var result = new List<T>();
-            var response = await client.GetManyAsync<T>(ids);
-            if ((response?.Count() ?? 0) == 0)
-                return null;
-            foreach (var item in response)
-            {
-                result.Add(item.Source);
-            }
+            var response = await client.GetManyAsync<T>(ids, IndexName);
+            if ((response?.Count() ?? 0) != 0)
+                result.AddRange(response.Select(x => x.Source));
             return result;
         }
 
-        public async Task<(IEnumerable<T>, long)> SearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector)
+        public async Task<(IEnumerable<T>, long)> SearchAsync(SearchDescriptor<T> descriptor)
         {
             var result = new List<T>();
+            descriptor = descriptor.Index(IndexName);
+            Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
+
             var response = await client.SearchAsync(selector);
             if (response.ApiCall.RequestBodyInBytes != null)
             {
@@ -94,24 +97,24 @@ namespace ElasticSearch.Repository
             }
             if (!response.IsValid)
                 return (null, 0);
-
-            foreach (var hit in response.Hits)
-            {
-                result.Add(hit.Source);
-            }
+            result.AddRange(response.Hits.Select(x => x.Source));
             return (result, response.Total);
         }
 
-        public async Task<IEnumerable<IHit<T>>> HitsSearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector)
+        public async Task<IEnumerable<IHit<T>>> HitsSearchAsync(SearchDescriptor<T> descriptor)
         {
+            descriptor = descriptor.Index(IndexName);
+            Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
             ISearchResponse<T> response = await client.SearchAsync(selector);
             if (response.IsValid)
                 return response.Hits;
             return null;
         }
 
-        public async Task<TermsAggregate<string>> AggsSearchAsync(Func<SearchDescriptor<T>, ISearchRequest> selector, string key)
+        public async Task<TermsAggregate<string>> AggsSearchAsync(SearchDescriptor<T> descriptor, string key)
         {
+            descriptor = descriptor.Index(IndexName);
+            Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
             ISearchResponse<T> response = await client.SearchAsync(selector);
             if (response.IsValid)
                 return response.Aggregations.Terms(key);
@@ -129,10 +132,10 @@ namespace ElasticSearch.Repository
 
         private async Task ExistOrCreateAsync()
         {
-            var result = await client.Indices.ExistsAsync(indexName);
+            var result = await client.Indices.ExistsAsync(IndexName);
             if (result.Exists)
                 return;
-            var createResult = await client.CreateIndexAsync<T>(indexName);
+            var createResult = await client.CreateIndexAsync<T>(IndexName, options.NumberOfShards, options.NumberOfReplicas);
             if (!createResult)
                 throw new Exception("创建Index失败");
         }
