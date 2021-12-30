@@ -6,3 +6,5 @@
 /obj
 /bin/Debug
 /bin/Release
+/ElasticSearch.Repository/bin
+/ElasticSearch.Repository/obj

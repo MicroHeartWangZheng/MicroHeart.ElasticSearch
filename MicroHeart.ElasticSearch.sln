@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElasticSearch.Repository", "ElasticSearch.Repository.csproj", "{89916EE6-9283-43B0-96FE-AE93D6971E65}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElasticSearch.Repository", "ElasticSearch.Repository\ElasticSearch.Repository.csproj", "{89916EE6-9283-43B0-96FE-AE93D6971E65}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
