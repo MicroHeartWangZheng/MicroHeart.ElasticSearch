@@ -95,7 +95,7 @@ namespace ElasticSearch.Repository
             return result;
         }
 
-        public (IEnumerable<T>, long) Search(SearchDescriptor<T>  descriptor)
+        public (IEnumerable<T>, long) Search(SearchDescriptor<T> descriptor)
         {
             var result = new List<T>();
             descriptor = descriptor.Index(IndexName);
