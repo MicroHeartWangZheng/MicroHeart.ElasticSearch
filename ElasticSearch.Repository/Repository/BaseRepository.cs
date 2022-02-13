@@ -12,11 +12,7 @@ namespace ElasticSearch.Repository
     {
         private readonly IElasticClient client;
         private readonly ElasticSearchOptions options;
-
-        /// <summary>
-        /// 可以通过重载 重写索引名称
-        /// </summary>
-        public virtual string IndexName { get; set; }
+        private string IndexName { get; set; }
 
         public BaseRepository(IElasticClient client, IOptions<ElasticSearchOptions> options)
         {
@@ -24,7 +20,11 @@ namespace ElasticSearch.Repository
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
             this.options = options.Value;
-            IndexName = typeof(T).Name.ToLower();
+
+            if (!string.IsNullOrEmpty(this.options.IndexPrefix))
+                IndexName = $"{this.options.IndexPrefix.ToLower()}_{typeof(T).Name.ToLower()}";
+            else
+                IndexName = typeof(T).Name.ToLower();
         }
 
         public bool Insert(T t)
