@@ -12,7 +12,21 @@ namespace ElasticSearch.Repository
     {
         private readonly IElasticClient client;
         private readonly ElasticSearchOptions options;
-        private string IndexName { get; set; }
+
+        /// <summary>
+        /// 索引名称
+        /// </summary>
+        public virtual string IndexName { get; set; } = typeof(T).Name.ToLower();
+
+        /// <summary>
+        /// 主分片数量
+        /// </summary>
+        public virtual int NumberOfShards { get; set; } = 1;
+
+        /// <summary>
+        /// 每个主分片的副分片数量
+        /// </summary>
+        public virtual int NumberOfReplicas { get; set; } = 1;
 
         public BaseRepository(IElasticClient client, IOptions<ElasticSearchOptions> options)
         {
@@ -129,7 +143,7 @@ namespace ElasticSearch.Repository
         {
             if (client.Indices.Exists(IndexName).Exists)
                 return;
-            if (!client.CreateIndex<T>(IndexName, options.NumberOfShards, options.NumberOfReplicas))
+            if (!client.CreateIndex<T>(IndexName, NumberOfShards, NumberOfReplicas))
                 throw new Exception("创建Index失败");
         }
     }

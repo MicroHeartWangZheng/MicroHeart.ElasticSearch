@@ -1,6 +1,4 @@
 ﻿using Elasticsearch.Net;
-using ElasticSearch.Repository.Provider;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Nest;
@@ -11,30 +9,30 @@ namespace ElasticSearch.Repository.Extensions
 {
     public static class ServiceCollectionExtension
     {
-        public static IServiceCollection AddElasticSearch(this IServiceCollection services, string defaultIndexName = "")
+
+        public static IServiceCollection AddElasticSearch(this IServiceCollection services, Action<ElasticSearchOptions> configAction)
+             => AddElasticSearch(services, (serviceProvider, options) => configAction.Invoke(options));
+
+
+        public static IServiceCollection AddElasticSearch(this IServiceCollection services, Action<IServiceProvider, ElasticSearchOptions> configAction)
         {
             if (services == null)
                 throw new ArgumentNullException(nameof(services));
+            if (configAction == null)
+                throw new ArgumentNullException(nameof(configAction));
 
-            var serviceProvider = services.BuildServiceProvider();
-            var configuration = serviceProvider.GetService<IConfiguration>();
-
-            services.Configure<ElasticSearchOptions>(configuration.GetSection("ElasticSearchOptions"));
+            services.AddOptions<ElasticSearchOptions>()
+                    .Configure<IServiceProvider>((options, sp) => configAction(sp, options));
 
             services.AddSingleton<IElasticClient>(provider =>
             {
                 var options = provider.GetService<IOptions<ElasticSearchOptions>>();
-                if (options == null || options.Value == null)
-                    throw new ArgumentNullException("ElasticSearch未配置");
                 var connectionString = options.Value.ConnectionStrings.FirstOrDefault();
                 var connectionPool = new SingleNodeConnectionPool(new Uri(connectionString));
                 var connectionSetting = new ConnectionSettings(connectionPool).DisableDirectStreaming();
 
-                if (!string.IsNullOrWhiteSpace(defaultIndexName))
-                    connectionSetting = connectionSetting.DefaultIndex(defaultIndexName);
                 return new ElasticClient(connectionSetting);
             });
-
 
             return services;
         }

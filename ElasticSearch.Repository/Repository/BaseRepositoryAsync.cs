@@ -135,7 +135,7 @@ namespace ElasticSearch.Repository
             var result = await client.Indices.ExistsAsync(IndexName);
             if (result.Exists)
                 return;
-            var createResult = await client.CreateIndexAsync<T>(IndexName, options.NumberOfShards, options.NumberOfReplicas);
+            var createResult = await client.CreateIndexAsync<T>(IndexName, NumberOfShards, NumberOfReplicas);
             if (!createResult)
                 throw new Exception("创建Index失败");
         }
