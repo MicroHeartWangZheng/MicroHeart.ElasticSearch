@@ -143,8 +143,10 @@ namespace ElasticSearch.Repository
         {
             if (client.Indices.Exists(IndexName).Exists)
                 return;
+
             if (!client.CreateIndex<T>(IndexName, NumberOfShards, NumberOfReplicas))
-                throw new Exception("创建Index失败");
+                throw new Exception($"创建索引{IndexName}失败");
+
         }
     }
 }
