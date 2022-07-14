@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>MicroHeart</Authors>
-    <Company>www.jiepei.com</Company>
+    <Company></Company>
     <Product></Product>
     <PackageProjectUrl></PackageProjectUrl>
-    <PackageId>JiePei.ElasticSearch.Repository</PackageId>
-	<Version>1.0.1</Version>
+    <PackageId>MicroHeart.ElasticSearch.Repository</PackageId>
+	<Version>1.0.3</Version>
 	<Description>ElasticSearch仓储</Description>
 	<RepositoryUrl>https://github.com/MicroHeartWangZheng/MicroHeart.ElasticSearch</RepositoryUrl>
   </PropertyGroup>
