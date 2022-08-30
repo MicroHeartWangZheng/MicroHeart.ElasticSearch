@@ -8,7 +8,7 @@
     <Product></Product>
     <PackageProjectUrl></PackageProjectUrl>
     <PackageId>MicroHeart.ElasticSearch.Repository</PackageId>
-	<Version>1.0.3</Version>
+	<Version>1.0.4</Version>
 	<Description>ElasticSearch仓储</Description>
 	<RepositoryUrl>https://github.com/MicroHeartWangZheng/MicroHeart.ElasticSearch</RepositoryUrl>
   </PropertyGroup>
