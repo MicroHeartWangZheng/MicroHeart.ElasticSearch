@@ -21,12 +21,12 @@ namespace ElasticSearch.Repository
         /// <summary>
         /// 主分片数量
         /// </summary>
-        public virtual int NumberOfShards { get; set; } = 1;
+        public virtual int NumberOfShards => 1;
 
         /// <summary>
         /// 每个主分片的副分片数量
         /// </summary>
-        public virtual int NumberOfReplicas { get; set; } = 1;
+        public virtual int NumberOfReplicas => 0;
 
         public BaseRepository(IElasticClient client, IOptions<ElasticSearchOptions> options)
         {
@@ -141,12 +141,7 @@ namespace ElasticSearch.Repository
 
         private void ExistOrCreate()
         {
-            if (client.Indices.Exists(IndexName).Exists)
-                return;
-
-            if (!client.CreateIndex<T>(IndexName, NumberOfShards, NumberOfReplicas))
-                throw new Exception($"创建索引{IndexName}失败");
-
+            client.CreateIndex<T>(IndexName, NumberOfShards, NumberOfReplicas);
         }
     }
 }

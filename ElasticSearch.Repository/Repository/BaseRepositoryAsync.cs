@@ -132,12 +132,7 @@ namespace ElasticSearch.Repository
 
         private async Task ExistOrCreateAsync()
         {
-            var result = await client.Indices.ExistsAsync(IndexName);
-            if (result.Exists)
-                return;
-            var createResult = await client.CreateIndexAsync<T>(IndexName, NumberOfShards, NumberOfReplicas);
-            if (!createResult)
-                throw new Exception("创建Index失败");
+            await client.CreateIndexAsync<T>(IndexName, NumberOfShards, NumberOfReplicas);
         }
     }
 }
