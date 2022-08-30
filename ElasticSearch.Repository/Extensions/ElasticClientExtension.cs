@@ -26,7 +26,10 @@ namespace ElasticSearch.Repository.Extensions
                     NumberOfShards = numberOfShards,
                 },
             };
-            return elasticClient.Indices.Create(indexName, p => p.InitializeUsing(indexState).Map<T>(item => item.AutoMap())).Acknowledged;
+            var response = elasticClient.Indices.Create(indexName, p => p.InitializeUsing(indexState).Map<T>(item => item.AutoMap()));
+            if (!response.Acknowledged)
+                throw new System.Exception(response.DebugInformation);
+            return response.Acknowledged;
         }
 
 
@@ -44,6 +47,8 @@ namespace ElasticSearch.Repository.Extensions
                 },
             };
             var response = await elasticClient.Indices.CreateAsync(indexName, p => p.InitializeUsing(indexState).Map<T>(item => item.AutoMap()));
+            if (!response.Acknowledged)
+                throw new System.Exception(response.DebugInformation);
             return response.Acknowledged;
         }
     }

@@ -29,8 +29,9 @@ namespace ElasticSearch.Repository.Extensions
                 var options = provider.GetService<IOptions<ElasticSearchOptions>>();
                 var connectionString = options.Value.ConnectionStrings.FirstOrDefault();
                 var connectionPool = new SingleNodeConnectionPool(new Uri(connectionString));
-                var connectionSetting = new ConnectionSettings(connectionPool).DisableDirectStreaming();
-
+                var connectionSetting = new ConnectionSettings(connectionPool);
+                if (options.Value.DisableDirectStreaming)
+                    connectionSetting.DisableDirectStreaming();
                 return new ElasticClient(connectionSetting);
             });
 
