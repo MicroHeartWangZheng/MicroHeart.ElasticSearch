@@ -18,7 +18,10 @@ namespace ElasticSearch.Repository.Extensions
                     NumberOfShards = numberOfShards,
                 },
             };
-            var response = elasticClient.Indices.Create(indexName, p => p.InitializeUsing(indexState).Settings(x => x.Setting("max_result_window", maxResultWindow)).Map<T>(item => item.AutoMap()));
+            var response = elasticClient.Indices.Create(indexName, p => p.Settings(x => x.NumberOfShards(numberOfShards)
+                                                                                                   .NumberOfReplicas(numberOfReplicas)
+                                                                                                   .Setting("max_result_window", maxResultWindow))
+                                                                         .Map<T>(item => item.AutoMap()));
             if (!response.Acknowledged)
                 throw new System.Exception(response.DebugInformation);
             return response.Acknowledged;
@@ -30,15 +33,10 @@ namespace ElasticSearch.Repository.Extensions
             if (elasticClient.Indices.Exists(indexName).Exists)
                 return true;
 
-            var indexState = new IndexState()
-            {
-                Settings = new IndexSettings()
-                {
-                    NumberOfReplicas = numberOfReplicas,
-                    NumberOfShards = numberOfShards,
-                },
-            };
-            var response = await elasticClient.Indices.CreateAsync(indexName, p => p.InitializeUsing(indexState).Settings(x => x.Setting("max_result_window", maxResultWindow)).Map<T>(item => item.AutoMap()));
+            var response = await elasticClient.Indices.CreateAsync(indexName, p => p.Settings(x => x.NumberOfShards(numberOfShards)
+                                                                                                    .NumberOfReplicas(numberOfReplicas)
+                                                                                                    .Setting("max_result_window", maxResultWindow))
+                                                                                    .Map<T>(item => item.AutoMap()));
             if (!response.Acknowledged)
                 throw new System.Exception(response.DebugInformation);
             return response.Acknowledged;
