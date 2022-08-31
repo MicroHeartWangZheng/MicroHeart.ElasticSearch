@@ -28,6 +28,11 @@ namespace ElasticSearch.Repository
         /// </summary>
         public virtual int NumberOfReplicas => 0;
 
+        /// <summary>
+        /// 返回最大数量 默认1000000
+        /// </summary>
+        public virtual int MaxResultWindow => 1000000;
+
         public BaseRepository(IElasticClient client, IOptions<ElasticSearchOptions> options)
         {
             this.client = client;
@@ -141,7 +146,7 @@ namespace ElasticSearch.Repository
 
         private void ExistOrCreate()
         {
-            client.CreateIndex<T>(IndexName, NumberOfShards, NumberOfReplicas);
+            client.CreateIndex<T>(IndexName, NumberOfShards, NumberOfReplicas, MaxResultWindow);
         }
     }
 }

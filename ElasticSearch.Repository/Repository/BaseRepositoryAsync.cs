@@ -132,7 +132,7 @@ namespace ElasticSearch.Repository
 
         private async Task ExistOrCreateAsync()
         {
-            await client.CreateIndexAsync<T>(IndexName, NumberOfShards, NumberOfReplicas);
+            await client.CreateIndexAsync<T>(IndexName, NumberOfShards, NumberOfReplicas, MaxResultWindow);
         }
     }
 }
