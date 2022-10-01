@@ -10,61 +10,60 @@ namespace ElasticSearch.Repository
 {
     partial class BaseRepository<T> : IBaseRepository<T> where T : class
     {
-        public async Task<bool> InsertAsync(T t)
+        public async Task InsertAsync(T t)
         {
             await ExistOrCreateAsync();
             var response = await client.IndexAsync(t, s => s.Index(IndexName));
-            return response.IsValid;
+            DealResponse(response);
         }
 
-        public async Task<bool> InsertManyAsync(IEnumerable<T> entities)
+        public async Task InsertManyAsync(IEnumerable<T> entities)
         {
             await ExistOrCreateAsync();
             var response = await client.IndexManyAsync(entities, IndexName);
-            return response.IsValid;
+            DealResponse(response);
         }
 
 
-        public async Task<bool> BulkAsync(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null)
+        public async Task BulkAsync(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null)
         {
             await ExistOrCreateAsync();
-            var resp = await client.BulkAsync(b => b.Index(IndexName).IndexMany(entities, bulkIndexSelector));
-            return resp.IsValid;
+            var response = await client.BulkAsync(b => b.Index(IndexName).IndexMany(entities, bulkIndexSelector));
+            DealResponse(response);
         }
 
-        public async Task<bool> DeleteAsync(Id id)
+        public async Task DeleteAsync(Id id)
         {
             var response = await client.DeleteAsync<T>(id, x => x.Index(IndexName));
-            return response.IsValid;
+            DealResponse(response);
         }
-        public async Task<bool> DeleteByQueryAsync(DeleteByQueryDescriptor<T> descriptor)
+        public async Task DeleteByQueryAsync(DeleteByQueryDescriptor<T> descriptor)
         {
             descriptor = descriptor.Index(IndexName);
             Func<DeleteByQueryDescriptor<T>, IDeleteByQueryRequest> selector = x => descriptor;
             var response = await client.DeleteByQueryAsync(selector);
-            return response.IsValid;
+            DealResponse(response);
         }
 
-        public async Task<bool> UpdateAsync(Id id, T t)
+        public async Task UpdateAsync(Id id, T t)
         {
             var response = await client.UpdateAsync<T>(id, p => p.Index(IndexName).Doc(t));
-            return response.IsValid;
+            DealResponse(response);
         }
 
-        public async Task<bool> UpdateByQueryAsync(UpdateByQueryDescriptor<T> descriptor)
+        public async Task UpdateByQueryAsync(UpdateByQueryDescriptor<T> descriptor)
         {
             descriptor = descriptor.Index(IndexName);
             Func<UpdateByQueryDescriptor<T>, IUpdateByQueryRequest> selector = x => descriptor;
             var response = await client.UpdateByQueryAsync<T>(selector);
-            return response.IsValid;
+            DealResponse(response);
         }
 
         public async Task<T> GetAsync(Id id)
         {
             var response = await client.GetAsync<T>(id, x => x.Index(IndexName));
-            if (response.IsValid)
-                return response.Source;
-            return null;
+            DealResponse(response);
+            return response.Source;
         }
 
         public async Task<IEnumerable<T>> GetManyAsync(IEnumerable<string> ids)
@@ -89,14 +88,13 @@ namespace ElasticSearch.Repository
             var result = new List<T>();
             descriptor = descriptor.Index(IndexName);
             Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
-
             var response = await client.SearchAsync(selector);
+            DealResponse(response);
             if (response.ApiCall.RequestBodyInBytes != null)
             {
                 var responseJson = System.Text.Encoding.UTF8.GetString(response.ApiCall.RequestBodyInBytes);
             }
-            if (!response.IsValid)
-                return (null, 0);
+
             result.AddRange(response.Hits.Select(x => x.Source));
             return (result, response.Total);
         }
@@ -105,27 +103,24 @@ namespace ElasticSearch.Repository
         {
             descriptor = descriptor.Index(IndexName);
             Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
-            ISearchResponse<T> response = await client.SearchAsync(selector);
-            if (response.IsValid)
-                return response.Hits;
-            return null;
+            var response = await client.SearchAsync(selector);
+            DealResponse(response);
+            return response.Hits;
         }
 
         public async Task<TermsAggregate<string>> AggsSearchAsync(SearchDescriptor<T> descriptor, string key)
         {
             descriptor = descriptor.Index(IndexName);
             Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
-            ISearchResponse<T> response = await client.SearchAsync(selector);
-            if (response.IsValid)
-                return response.Aggregations.Terms(key);
-            return null;
+            var response = await client.SearchAsync(selector);
+            DealResponse(response);
+            return response.Aggregations.Terms(key);
         }
 
         public async Task<IEnumerable<string>> AnalyzeAsync(EnumAnalyzer analyzer, string text)
         {
             var response = await client.Indices.AnalyzeAsync(a => a.Analyzer(analyzer.ToDescription()).Text(text));
-            if (!response.IsValid)
-                throw null;
+            DealResponse(response);
             return response.Tokens.Select(x => x.Token);
         }
 
@@ -133,6 +128,12 @@ namespace ElasticSearch.Repository
         private async Task ExistOrCreateAsync()
         {
             await client.CreateIndexAsync<T>(IndexName, NumberOfShards, NumberOfReplicas, MaxResultWindow);
+        }
+
+        private void DealResponse(IResponse response)
+        {
+            if (!response.IsValid)
+                throw new Exception(response.DebugInformation);
         }
     }
 }

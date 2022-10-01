@@ -5,6 +5,7 @@ using Nest;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ElasticSearch.Repository
 {
@@ -46,54 +47,60 @@ namespace ElasticSearch.Repository
                 IndexName = typeof(T).Name.ToLower();
         }
 
-        public bool Insert(T t)
+        public void Insert(T t)
         {
             ExistOrCreate();
-            return client.Index(t, s => s.Index(IndexName)).IsValid;
+            var response = client.Index(t, s => s.Index(IndexName));
+            DealResponse(response);
         }
 
-        public bool InsertMany(IEnumerable<T> entities)
+        public void InsertMany(IEnumerable<T> entities)
         {
             ExistOrCreate();
-            return client.IndexMany(entities, IndexName).IsValid;
+            var response = client.IndexMany(entities, IndexName);
+            DealResponse(response);
         }
 
-        public bool Bulk(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null)
+        public void Bulk(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null)
         {
             ExistOrCreate();
-            return client.Bulk(b => b.Index(IndexName).IndexMany(entities, bulkIndexSelector)).IsValid;
+            var response = client.Bulk(b => b.Index(IndexName).IndexMany(entities, bulkIndexSelector));
+            DealResponse(response);
         }
 
-        public bool Delete(Id id)
+        public void Delete(Id id)
         {
-            return client.Delete<T>(id, d => d.Index(IndexName)).IsValid;
+            var response = client.Delete<T>(id, d => d.Index(IndexName));
+            DealResponse(response);
         }
 
-        public bool DeleteByQuery(DeleteByQueryDescriptor<T> descriptor)
+        public void DeleteByQuery(DeleteByQueryDescriptor<T> descriptor)
         {
             descriptor = descriptor.Index(IndexName);
             Func<DeleteByQueryDescriptor<T>, IDeleteByQueryRequest> selector = x => descriptor;
-            return client.DeleteByQuery(selector).IsValid;
+            var response = client.DeleteByQuery(selector);
+            DealResponse(response);
         }
 
-        public bool Update(Id id, T t)
+        public void Update(Id id, T t)
         {
-            return client.Update<T>(id, p => p.Index(IndexName).Doc(t)).IsValid;
+            var response = client.Update<T>(id, p => p.Index(IndexName).Doc(t));
+            DealResponse(response);
         }
 
-        public bool UpdateByQuery(UpdateByQueryDescriptor<T> descriptor)
+        public void UpdateByQuery(UpdateByQueryDescriptor<T> descriptor)
         {
             descriptor = descriptor.Index(IndexName);
             Func<UpdateByQueryDescriptor<T>, IUpdateByQueryRequest> selector = x => descriptor;
-            return client.UpdateByQuery<T>(selector).IsValid;
+            var response = client.UpdateByQuery<T>(selector);
+            DealResponse(response);
         }
 
         public T Get(Id id)
         {
             var response = client.Get<T>(id, g => g.Index(IndexName));
-            if (response.IsValid && response.Found)
-                return response.Source;
-            return null;
+            DealResponse(response);
+            return response.Source;
         }
 
         public IEnumerable<T> GetMany(IEnumerable<string> ids)
@@ -120,8 +127,7 @@ namespace ElasticSearch.Repository
             descriptor = descriptor.Index(IndexName);
             Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
             var response = client.Search(selector);
-            if (!response.IsValid)
-                return (null, 0);
+            DealResponse(response);
             result.AddRange(response.Hits.Select(x => x.Source));
             return (result, response.Total);
         }
@@ -131,16 +137,14 @@ namespace ElasticSearch.Repository
             descriptor = descriptor.Index(IndexName);
             Func<SearchDescriptor<T>, ISearchRequest> selector = x => descriptor;
             var response = client.Search(selector);
-            if (response.IsValid)
-                return response.Hits;
+            DealResponse(response);
             return null;
         }
 
         public IEnumerable<string> Analyze(EnumAnalyzer analyzer, string text)
         {
             var response = client.Indices.Analyze(a => a.Analyzer(analyzer.ToDescription()).Text(text));
-            if (!response.IsValid)
-                throw null;
+            DealResponse(response);
             return response.Tokens.Select(x => x.Token);
         }
 

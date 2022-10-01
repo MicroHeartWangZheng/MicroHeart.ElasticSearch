@@ -8,26 +8,26 @@ namespace ElasticSearch.Repository
 {
     public interface IBaseRepository<T> where T : class
     {
-        bool Insert(T t);
-        Task<bool> InsertAsync(T t);
+        void Insert(T t);
+        Task InsertAsync(T t);
 
-        bool InsertMany(IEnumerable<T> entities);
-        Task<bool> InsertManyAsync(IEnumerable<T> entities);
+        void InsertMany(IEnumerable<T> entities);
+        Task InsertManyAsync(IEnumerable<T> entities);
 
-        bool Bulk(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null);
-        Task<bool> BulkAsync(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null);
+        void Bulk(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null);
+        Task BulkAsync(IEnumerable<T> entities, Func<BulkIndexDescriptor<T>, T, IBulkIndexOperation<T>> bulkIndexSelector = null);
 
-        bool Delete(Id id);
-        Task<bool> DeleteAsync(Id id);
+        void Delete(Id id);
+        Task DeleteAsync(Id id);
 
-        bool DeleteByQuery(DeleteByQueryDescriptor<T> descriptor);
-        Task<bool> DeleteByQueryAsync(DeleteByQueryDescriptor<T> descriptor);
+        void DeleteByQuery(DeleteByQueryDescriptor<T> descriptor);
+        Task DeleteByQueryAsync(DeleteByQueryDescriptor<T> descriptor);
 
-        bool Update(Id id, T t);
-        Task<bool> UpdateAsync(Id id, T t);
+        void Update(Id id, T t);
+        Task UpdateAsync(Id id, T t);
 
-        bool UpdateByQuery(UpdateByQueryDescriptor<T> descriptor);
-        Task<bool> UpdateByQueryAsync(UpdateByQueryDescriptor<T> descriptor);
+        void UpdateByQuery(UpdateByQueryDescriptor<T> descriptor);
+        Task UpdateByQueryAsync(UpdateByQueryDescriptor<T> descriptor);
 
         T Get(Id id);
         Task<T> GetAsync(Id id);
