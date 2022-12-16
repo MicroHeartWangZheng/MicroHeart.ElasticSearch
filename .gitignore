@@ -11,3 +11,11 @@
 /src/obj
 /src/.vs/ElasticSearch.Repository/v17
 /src/ElasticSearch.Repository/obj
+/src/.vs
+/src/ElasticSearch.Repository/.vs/ElasticSearch.Repository
+/src/ElasticSearch.Repository/bin/Debug/netstandard2.0
+/src/Example/ElasticSearch.Example.Repository/bin/Debug/net6.0
+/src/Example/ElasticSearch.Example.Repository/obj
+/src/Example/ElasticSearch.Example.WebApi/bin/Debug/net6.0
+/src/Example/ElasticSearch.Example.WebApi/obj
+/src/ElasticSearch.Repository/bin/Debug
