@@ -127,7 +127,7 @@ namespace ElasticSearch.Repository
 
         private async Task ExistOrCreateAsync()
         {
-            await client.CreateIndexAsync<T>(IndexName, NumberOfShards, NumberOfReplicas, MaxResultWindow);
+            await client.CreateIndexAsync<T>(IndexName,Setting);
         }
 
         private void DealResponse(IResponse response)

@@ -17,22 +17,9 @@ namespace ElasticSearch.Repository
         /// <summary>
         /// 索引名称
         /// </summary>
-        public virtual string IndexName { get; set; } = typeof(T).Name.ToLower();
+        public virtual string IndexName { get; set; }
 
-        /// <summary>
-        /// 主分片数量
-        /// </summary>
-        public virtual int NumberOfShards => 1;
-
-        /// <summary>
-        /// 每个主分片的副分片数量
-        /// </summary>
-        public virtual int NumberOfReplicas => 0;
-
-        /// <summary>
-        /// 返回最大数量 默认1000000
-        /// </summary>
-        public virtual int MaxResultWindow => 1000000;
+        public virtual Func<IndexSettingsDescriptor, IPromise<IIndexSettings>> Setting { get; set; }
 
         public BaseRepository(IElasticClient client, IOptions<ElasticSearchOptions> options)
         {
@@ -41,10 +28,7 @@ namespace ElasticSearch.Repository
                 throw new ArgumentNullException(nameof(options));
             this.options = options.Value;
 
-            if (!string.IsNullOrEmpty(this.options.IndexPrefix))
-                IndexName = $"{this.options.IndexPrefix.ToLower()}_{typeof(T).Name.ToLower()}";
-            else
-                IndexName = typeof(T).Name.ToLower();
+            SetIndexName();
         }
 
         public void Insert(T t)
@@ -150,7 +134,17 @@ namespace ElasticSearch.Repository
 
         private void ExistOrCreate()
         {
-            client.CreateIndex<T>(IndexName, NumberOfShards, NumberOfReplicas, MaxResultWindow);
+            client.CreateIndex<T>(IndexName, Setting);
+        }
+
+        private void SetIndexName()
+        {
+            if (!string.IsNullOrEmpty(IndexName))
+                IndexName = IndexName.ToLower();
+            else if (!string.IsNullOrEmpty(this.options.IndexPrefix))
+                IndexName = $"{this.options.IndexPrefix.ToLower()}_{typeof(T).Name.ToLower()}";
+            else
+                IndexName = typeof(T).Name.ToLower();
         }
     }
 }
