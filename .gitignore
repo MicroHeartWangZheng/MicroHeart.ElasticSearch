@@ -8,3 +8,5 @@
 /bin/Release
 /ElasticSearch.Repository/bin
 /ElasticSearch.Repository/obj
+/src/obj
+/src/.vs/ElasticSearch.Repository/v17
